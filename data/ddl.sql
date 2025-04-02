@@ -4,389 +4,379 @@ CREATE DATABASE academic_campus;
 USE academic_campus;
 
 
-CREATE TABLE Estados_Camper (
-    id_estado INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255)
-);
-
-CREATE TABLE Niveles_Riesgo (
-    id_nivel_riesgo INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    color VARCHAR(7) NOT NULL
-);
-
-CREATE TABLE Tipos_Documento (
-    id_tipo_documento INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(20) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    formato_validacion VARCHAR(50)
-);
-
-CREATE TABLE Tipos_Evaluacion (
-    id_tipo_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    porcentaje DECIMAL(5,2) NOT NULL CHECK (porcentaje > 0 AND porcentaje <= 100)
-);
-
-CREATE TABLE Estados_Matricula (
-    id_estado_matricula INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255)
-);
-
-CREATE TABLE Tipos_Area (
-    id_tipo_area INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    requisitos_equipamiento TEXT
-);
-
-CREATE TABLE Tipos_Material (
-    id_tipo_material INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    formato_aceptado VARCHAR(50)
-);
-
-
-CREATE TABLE Paises (
-    id_pais INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    codigo_iso VARCHAR(2) NOT NULL UNIQUE
-);
-
-CREATE TABLE Departamentos (
-    id_departamento INT PRIMARY KEY AUTO_INCREMENT,
+-- Tabla de Campers (Estudiantes)
+CREATE TABLE campers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
-    id_pais INT NOT NULL,
-    FOREIGN KEY (id_pais) REFERENCES Paises(id_pais),
-    UNIQUE(nombre, id_pais)
-);
-
-CREATE TABLE Ciudades (
-    id_ciudad INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL,
-    id_departamento INT NOT NULL,
-    codigo_postal VARCHAR(10),
-    FOREIGN KEY (id_departamento) REFERENCES Departamentos(id_departamento),
-    UNIQUE(nombre, id_departamento)
-);
-
-
-CREATE TABLE Roles (
-    id_rol INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    descripcion VARCHAR(255),
-    permisos JSON
-);
-
-CREATE TABLE Usuarios (
-    id_usuario INT PRIMARY KEY AUTO_INCREMENT,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    id_rol INT NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    activo BOOLEAN DEFAULT TRUE,
-    ultimo_acceso TIMESTAMP NULL,
-    intentos_fallidos INT DEFAULT 0,
-    fecha_bloqueo TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_rol) REFERENCES Roles(id_rol),
-    INDEX idx_email (email),
-    INDEX idx_username (username)
-);
-
-
-CREATE TABLE Campers (
-    id_camper INT PRIMARY KEY AUTO_INCREMENT,
-    numero_identificacion VARCHAR(20) UNIQUE NOT NULL,
-    id_tipo_documento INT NOT NULL,
-    nombres VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    fecha_nacimiento DATE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    id_ciudad INT NOT NULL,
-    direccion TEXT,
-    genero ENUM('M', 'F', 'O') NOT NULL,
-    fecha_registro DATE NOT NULL DEFAULT CURRENT_DATE,
-    id_estado INT NOT NULL,
-    id_nivel_riesgo INT NOT NULL,
-    foto_perfil VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_tipo_documento) REFERENCES Tipos_Documento(id_tipo_documento),
-    FOREIGN KEY (id_ciudad) REFERENCES Ciudades(id_ciudad),
-    FOREIGN KEY (id_estado) REFERENCES Estados_Camper(id_estado),
-    FOREIGN KEY (id_nivel_riesgo) REFERENCES Niveles_Riesgo(id_nivel_riesgo),
-    CHECK (fecha_nacimiento <= CURRENT_DATE),
-    INDEX idx_numero_identificacion (numero_identificacion),
-    INDEX idx_email (email)
-);
-
-CREATE TABLE Telefonos_Camper (
-    id_telefono INT PRIMARY KEY AUTO_INCREMENT,
-    id_camper INT NOT NULL,
-    telefono VARCHAR(15) NOT NULL,
-    tipo ENUM('Personal', 'Acudiente') NOT NULL,
-    principal BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (id_camper) REFERENCES Campers(id_camper) ON DELETE CASCADE,
-    UNIQUE(id_camper, telefono)
-);
-
-CREATE TABLE Acudientes (
-    id_acudiente INT PRIMARY KEY AUTO_INCREMENT,
-    id_camper INT NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    relacion ENUM('Padre', 'Madre', 'Tutor Legal', 'Otro') NOT NULL,
-    telefono VARCHAR(15) NOT NULL,
-    email VARCHAR(100),
-    direccion TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_camper) REFERENCES Campers(id_camper) ON DELETE CASCADE
-)
-
-
-CREATE TABLE Modulos (
-    id_modulo INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT,
-    duracion_dias INT NOT NULL CHECK (duracion_dias > 0),
-    requisitos TEXT,
-    objetivos TEXT,
-    contenido_programatico TEXT,
-    proyecto_requerido BOOLEAN DEFAULT FALSE,
-    peso_proyecto DECIMAL(5,2)
-);
-
-CREATE TABLE Materiales_Modulo (
-    id_material INT PRIMARY KEY AUTO_INCREMENT,
-    id_modulo INT NOT NULL,
-    titulo VARCHAR(255) NOT NULL,
-    descripcion TEXT,
-    id_tipo_material INT NOT NULL,
-    url VARCHAR(255),
-    orden INT NOT NULL CHECK (orden > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_modulo) REFERENCES Modulos(id_modulo) ON DELETE CASCADE,
-    FOREIGN KEY (id_tipo_material) REFERENCES Tipos_Material(id_tipo_material)
-);
-
-CREATE TABLE Rutas (
-    id_ruta INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    descripcion TEXT,
-    duracion_semanas INT NOT NULL CHECK (duracion_semanas > 0),
-    fecha_inicio DATE,
-    fecha_fin DATE,
-    gestor_db VARCHAR(50),
-    version_gestor VARCHAR(20),
-    activa BOOLEAN DEFAULT TRUE,
-    cupo_maximo INT DEFAULT 30 CHECK (cupo_maximo > 0),
-    CHECK (fecha_fin IS NULL OR fecha_fin > fecha_inicio)
-);
-
-CREATE TABLE Ruta_Modulo (
-    id_ruta INT NOT NULL,
-    id_modulo INT NOT NULL,
-    orden INT NOT NULL CHECK (orden > 0),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_ruta, id_modulo),
-    FOREIGN KEY (id_ruta) REFERENCES Rutas(id_ruta) ON DELETE CASCADE,
-    FOREIGN KEY (id_modulo) REFERENCES Modulos(id_modulo)
-);
-
-CREATE TABLE Areas_Entrenamiento (
-    id_area INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL UNIQUE,
-    id_tipo_area INT NOT NULL,
-    capacidad_maxima INT DEFAULT 33 CHECK (capacidad_maxima > 0),
-    ubicacion VARCHAR(100),
-    descripcion TEXT,
-    activa BOOLEAN DEFAULT TRUE,
-    equipamiento TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_tipo_area) REFERENCES Tipos_Area(id_tipo_area)
-);
-
-CREATE TABLE Horarios (
-    id_horario INT PRIMARY KEY AUTO_INCREMENT,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL,
-    jornada ENUM('Mañana', 'Tarde', 'Noche') NOT NULL,
-    CHECK (hora_fin > hora_inicio)
-);
-
-CREATE TABLE Area_Horario (
-    id_area INT NOT NULL,
-    id_horario INT NOT NULL,
-    disponible BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_area, id_horario),
-    FOREIGN KEY (id_area) REFERENCES Areas_Entrenamiento(id_area) ON DELETE CASCADE,
-    FOREIGN KEY (id_horario) REFERENCES Horarios(id_horario)
-);
-
-
-CREATE TABLE Trainers (
-    id_trainer INT PRIMARY KEY AUTO_INCREMENT,
-    id_usuario INT UNIQUE,
-    numero_identificacion VARCHAR(20) UNIQUE NOT NULL,
-    id_tipo_documento INT NOT NULL,
-    nombres VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    fecha_contratacion DATE NOT NULL,
-    activo BOOLEAN DEFAULT TRUE,
-    especialidad VARCHAR(100),
-    nivel_educacion VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_tipo_documento) REFERENCES Tipos_Documento(id_tipo_documento),
-    FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
-    INDEX idx_email (email),
-    INDEX idx_numero_identificacion (numero_identificacion)
+    edad INT,
+    telefono VARCHAR(20),
+    acudiente_nombre VARCHAR(100),
+    acudiente_telefono VARCHAR(20),
+    estado ENUM('Inscrito', 'Cursando', 'Graduado', 'Expulsado', 'Retirado', 'Aprobado', 'En proceso') NOT NULL,
+    nivel_riesgo ENUM('Bajo', 'Medio', 'Alto') NOT NULL,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE Telefonos_Trainer (
-    id_telefono INT PRIMARY KEY AUTO_INCREMENT,
-    id_trainer INT NOT NULL,
-    telefono VARCHAR(15) NOT NULL,
-    tipo ENUM('Personal', 'Oficina') NOT NULL,
-    FOREIGN KEY (id_trainer) REFERENCES Trainers(id_trainer) ON DELETE CASCADE,
-    UNIQUE(id_trainer, telefono)
+-- Tabla de Teléfonos Adicionales de Campers
+CREATE TABLE telefonos_campers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT,
+    telefono VARCHAR(20) NOT NULL,
+    FOREIGN KEY (camper_id) REFERENCES campers(id)
 );
 
-CREATE TABLE Disponibilidad_Trainer (
-    id_trainer INT NOT NULL,
-    dia_semana ENUM('Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo') NOT NULL,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_trainer, dia_semana, hora_inicio),
-    FOREIGN KEY (id_trainer) REFERENCES Trainers(id_trainer) ON DELETE CASCADE,
-    CHECK (hora_fin > hora_inicio)
+-- Tabla de Rutas (Carreras)
+CREATE TABLE rutas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    duracion_meses INT,
+    sgdb_principal VARCHAR(50),
+    sgdb_alternativo VARCHAR(50),
+    area_id INT,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
 );
 
-CREATE TABLE Trainer_Modulo (
-    id_trainer INT NOT NULL,
-    id_modulo INT NOT NULL,
-    nivel_experiencia ENUM('Principiante', 'Intermedio', 'Avanzado', 'Experto') NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_trainer, id_modulo),
-    FOREIGN KEY (id_trainer) REFERENCES Trainers(id_trainer) ON DELETE CASCADE,
-    FOREIGN KEY (id_modulo) REFERENCES Modulos(id_modulo)
+-- Tabla de Módulos
+CREATE TABLE modulos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    ruta_id INT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    duracion_horas INT,
+    peso_teorico DECIMAL(5,2),
+    peso_practico DECIMAL(5,2),
+    peso_quiz DECIMAL(5,2),
+    FOREIGN KEY (ruta_id) REFERENCES rutas(id)
 );
 
-
-CREATE TABLE Matriculas (
-    id_matricula INT PRIMARY KEY AUTO_INCREMENT,
-    id_camper INT NOT NULL,
-    id_ruta INT NOT NULL,
-    id_area INT NOT NULL,
-    id_horario INT NOT NULL,
-    id_estado_matricula INT NOT NULL,
-    fecha_matricula DATE NOT NULL DEFAULT CURRENT_DATE,
-    fecha_finalizacion DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_camper) REFERENCES Campers(id_camper) ON DELETE CASCADE,
-    FOREIGN KEY (id_ruta) REFERENCES Rutas(id_ruta) ON DELETE CASCADE,
-    FOREIGN KEY (id_area) REFERENCES Areas_Entrenamiento(id_area),
-    FOREIGN KEY (id_horario) REFERENCES Horarios(id_horario),
-    FOREIGN KEY (id_estado_matricula) REFERENCES Estados_Matricula(id_estado_matricula),
-    UNIQUE (id_camper, id_ruta),
-    CHECK (fecha_finalizacion IS NULL OR fecha_finalizacion >= fecha_matricula)
+-- Tabla de Trainers (Profesores)
+CREATE TABLE trainers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    especialidad VARCHAR(50) NOT NULL,
+    fecha_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    area_id INT NOT NULL,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
 );
 
-CREATE TABLE Reasignaciones_Ruta (
-    id_reasignacion INT PRIMARY KEY AUTO_INCREMENT,
-    id_matricula INT NOT NULL,
-    id_ruta_origen INT NOT NULL,
-    id_ruta_destino INT NOT NULL,
-    fecha_reasignacion DATE NOT NULL DEFAULT CURRENT_DATE,
+-- Tabla de Evaluaciones
+CREATE TABLE evaluaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT,
+    modulo_id INT,
+    trainer_id INT,
+    nota_teorica DECIMAL(5,2),
+    nota_practica DECIMAL(5,2),
+    nota_quiz DECIMAL(5,2),
+    nota_final DECIMAL(5,2),
+    fecha_evaluacion DATE,
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla de Asignaciones (Relación entre campers y rutas)
+CREATE TABLE asignaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT,
+    ruta_id INT,
+    trainer_id INT,
+    fecha_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_fin TIMESTAMP NULL,
+    estado ENUM('Activa', 'Inactiva') DEFAULT 'Activa',
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (ruta_id) REFERENCES rutas(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla de áreas de entrenamiento
+CREATE TABLE areas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    capacidad_maxima INT NOT NULL,
+    horario_inicio TIME,
+    horario_fin TIME,
+    estado ENUM('Activa', 'Inactiva') DEFAULT 'Activa'
+);
+
+-- Tabla para registrar cambios de estado de campers
+CREATE TABLE log_cambios_estado (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
+    estado_anterior ENUM('Inscrito', 'Cursando', 'Graduado', 'Expulsado', 'Retirado') NOT NULL,
+    estado_nuevo ENUM('Inscrito', 'Cursando', 'Graduado', 'Expulsado', 'Retirado') NOT NULL,
+    fecha_cambio DATETIME NOT NULL,
+    FOREIGN KEY (camper_id) REFERENCES campers(id)
+);
+
+-- Tabla para registrar graduaciones
+CREATE TABLE log_graduaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
+    fecha_graduacion DATETIME NOT NULL,
+    promedio_final DECIMAL(5,2) NOT NULL,
+    FOREIGN KEY (camper_id) REFERENCES campers(id)
+);
+
+-- Tabla para registrar retiros
+CREATE TABLE log_retiros (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
     motivo TEXT NOT NULL,
-    id_usuario INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_matricula) REFERENCES Matriculas(id_matricula) ON DELETE CASCADE,
-    FOREIGN KEY (id_ruta_origen) REFERENCES Rutas(id_ruta),
-    FOREIGN KEY (id_ruta_destino) REFERENCES Rutas(id_ruta),
-    FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
-    CHECK (id_ruta_origen != id_ruta_destino)
+    fecha_retiro DATETIME NOT NULL,
+    FOREIGN KEY (camper_id) REFERENCES campers(id)
 );
 
-CREATE TABLE Evaluaciones (
-    id_evaluacion INT PRIMARY KEY AUTO_INCREMENT,
-    id_matricula INT NOT NULL,
-    id_modulo INT NOT NULL,
-    id_tipo_evaluacion INT NOT NULL,
-    nota DECIMAL(5,2) NOT NULL CHECK (nota >= 0 AND nota <= 100),
-    fecha_evaluacion DATE NOT NULL DEFAULT CURRENT_DATE,
-    observaciones TEXT,
-    id_trainer INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_matricula) REFERENCES Matriculas(id_matricula) ON DELETE CASCADE,
-    FOREIGN KEY (id_modulo) REFERENCES Modulos(id_modulo),
-    FOREIGN KEY (id_tipo_evaluacion) REFERENCES Tipos_Evaluacion(id_tipo_evaluacion),
-    FOREIGN KEY (id_trainer) REFERENCES Trainers(id_trainer)
+-- Tabla para registrar cambios de horario de trainers
+CREATE TABLE log_cambios_horario (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    trainer_id INT NOT NULL,
+    area_anterior INT NOT NULL,
+    area_nueva INT NOT NULL,
+    fecha_cambio DATETIME NOT NULL,
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id),
+    FOREIGN KEY (area_anterior) REFERENCES areas(id),
+    FOREIGN KEY (area_nueva) REFERENCES areas(id)
 );
 
-CREATE TABLE Proyectos (
-    id_proyecto INT PRIMARY KEY AUTO_INCREMENT,
-    id_modulo INT NOT NULL,
-    nombre VARCHAR(255) NOT NULL,
+-- Tabla para registrar asistencias
+CREATE TABLE asistencias (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    area_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    camper_id INT NOT NULL,
+    asistio BOOLEAN NOT NULL,
+    FOREIGN KEY (area_id) REFERENCES areas(id),
+    FOREIGN KEY (camper_id) REFERENCES campers(id)
+);
+
+-- Tabla para salones
+CREATE TABLE salones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    capacidad INT NOT NULL,
+    descripcion TEXT,
+    estado ENUM('Activo', 'Inactivo', 'Mantenimiento') NOT NULL DEFAULT 'Activo'
+);
+
+-- Tabla para egresados
+CREATE TABLE egresados (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
+    fecha_egreso DATETIME NOT NULL,
+    promedio_final DECIMAL(5,2) NOT NULL,
+    ruta_id INT NOT NULL,
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (ruta_id) REFERENCES rutas(id)
+);
+
+-- Tabla para notificaciones a trainers
+CREATE TABLE notificaciones_trainers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    trainer_id INT NOT NULL,
+    mensaje TEXT NOT NULL,
+    fecha_notificacion DATETIME NOT NULL,
+    leida BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla para plantillas de rutas
+CREATE TABLE plantillas_rutas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    sgdb_principal VARCHAR(50) NOT NULL,
+    sgdb_alternativo VARCHAR(50),
+    duracion_meses INT NOT NULL
+);
+
+-- Tabla para módulos de plantillas
+CREATE TABLE modulos_plantilla (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    plantilla_id INT NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    duracion_horas INT NOT NULL,
+    peso_teorico DECIMAL(5,2) NOT NULL,
+    peso_practico DECIMAL(5,2) NOT NULL,
+    peso_quiz DECIMAL(5,2) NOT NULL,
+    FOREIGN KEY (plantilla_id) REFERENCES plantillas_rutas(id)
+);
+
+-- Tabla para conocimientos de trainers
+CREATE TABLE conocimientos_trainers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    trainer_id INT NOT NULL,
+    modulo_id INT NOT NULL,
+    nivel ENUM('Básico', 'Intermedio', 'Avanzado') NOT NULL,
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id),
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id)
+);
+
+-- Tabla para gestión de recursos
+CREATE TABLE recursos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    tipo ENUM('Equipo', 'Software', 'Documentación', 'Otro') NOT NULL,
+    descripcion TEXT,
+    estado ENUM('Disponible', 'En uso', 'Mantenimiento', 'Obsoleto') NOT NULL DEFAULT 'Disponible',
+    fecha_adquisicion DATE,
+    valor DECIMAL(10,2),
+    area_id INT,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
+);
+
+-- Tabla para seguimiento de proyectos
+CREATE TABLE proyectos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
     fecha_inicio DATE NOT NULL,
+    fecha_fin_estimada DATE,
+    estado ENUM('Planificado', 'En progreso', 'Completado', 'Cancelado') NOT NULL DEFAULT 'Planificado',
+    ruta_id INT,
+    trainer_id INT,
+    FOREIGN KEY (ruta_id) REFERENCES rutas(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla para gestión de eventos
+CREATE TABLE eventos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    tipo ENUM('Taller', 'Conferencia', 'Hackathon', 'Networking', 'Otro') NOT NULL,
+    capacidad_maxima INT,
+    area_id INT,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
+);
+
+-- Tabla para sistema de notificaciones
+CREATE TABLE notificaciones_sistema (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    mensaje TEXT NOT NULL,
+    tipo ENUM('Información', 'Advertencia', 'Error', 'Éxito') NOT NULL,
+    fecha_creacion DATETIME NOT NULL,
+    fecha_envio DATETIME,
+    estado ENUM('Pendiente', 'Enviada', 'Leída') NOT NULL DEFAULT 'Pendiente',
+    destinatario_tipo ENUM('Todos', 'Trainers', 'Campers', 'Área específica') NOT NULL,
+    area_id INT,
+    FOREIGN KEY (area_id) REFERENCES areas(id)
+);
+
+-- Tabla para gestión de materiales
+CREATE TABLE materiales (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    tipo ENUM('Documento', 'Video', 'Presentación', 'Código', 'Otro') NOT NULL,
+    url VARCHAR(255),
+    fecha_creacion DATETIME NOT NULL,
+    modulo_id INT,
+    trainer_id INT,
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla para sistema de encuestas
+CREATE TABLE encuestas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    tipo ENUM('Satisfacción', 'Evaluación', 'Retroalimentación') NOT NULL,
+    estado ENUM('Activa', 'Inactiva', 'Finalizada') NOT NULL DEFAULT 'Activa',
+    modulo_id INT,
+    trainer_id INT,
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
+);
+
+-- Tabla para gestión de certificados
+CREATE TABLE certificados (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
+    ruta_id INT NOT NULL,
+    fecha_emision DATE NOT NULL,
+    fecha_vencimiento DATE NOT NULL,
+    codigo_unico VARCHAR(20) UNIQUE NOT NULL,
+    estado VARCHAR(20) CHECK (estado IN ('Vigente', 'Vencido', 'Revocado')),
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (ruta_id) REFERENCES rutas(id)
+);
+
+-- Tabla para gestionar mentorías
+CREATE TABLE mentorias (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    mentor_id INT NOT NULL,
+    camper_id INT NOT NULL,
+    modulo_id INT NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NOT NULL,
+    estado ENUM('Activa', 'Finalizada', 'Cancelada') NOT NULL DEFAULT 'Activa',
+    tipo ENUM('Individual', 'Grupal') NOT NULL,
+    descripcion TEXT,
+    FOREIGN KEY (mentor_id) REFERENCES trainers(id),
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id)
+);
+
+-- Tabla para gestionar horarios de clases
+CREATE TABLE horarios_clases (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    modulo_id INT NOT NULL,
+    trainer_id INT NOT NULL,
+    salon_id INT NOT NULL,
+    dia_semana ENUM('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado') NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    estado ENUM('Activo', 'Inactivo', 'Suspendido') NOT NULL DEFAULT 'Activo',
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE,
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id),
+    FOREIGN KEY (salon_id) REFERENCES salones(id)
+);
+
+-- Tabla para gestionar tareas y proyectos
+CREATE TABLE tareas_proyectos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    modulo_id INT NOT NULL,
+    trainer_id INT NOT NULL,
+    titulo VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    fecha_asignacion DATE NOT NULL,
     fecha_entrega DATE NOT NULL,
-    peso_evaluacion DECIMAL(5,2) NOT NULL CHECK (peso_evaluacion > 0 AND peso_evaluacion <= 100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_modulo) REFERENCES Modulos(id_modulo) ON DELETE CASCADE,
-    CHECK (fecha_entrega > fecha_inicio)
+    tipo ENUM('Tarea', 'Proyecto', 'Evaluación') NOT NULL,
+    peso DECIMAL(5,2) NOT NULL,
+    estado ENUM('Activa', 'Finalizada', 'Cancelada') NOT NULL DEFAULT 'Activa',
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
 );
 
-CREATE TABLE Entregas_Proyecto (
-    id_entrega INT PRIMARY KEY AUTO_INCREMENT,
-    id_proyecto INT NOT NULL,
-    id_matricula INT NOT NULL,
-    fecha_entrega TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    url_entrega VARCHAR(255),
-    calificacion DECIMAL(5,2),
-    observaciones TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_proyecto) REFERENCES Proyectos(id_proyecto) ON DELETE CASCADE,
-    FOREIGN KEY (id_matricula) REFERENCES Matriculas(id_matricula) ON DELETE CASCADE
+-- Tabla para gestionar feedback de los campers
+CREATE TABLE feedback_campers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    camper_id INT NOT NULL,
+    modulo_id INT NOT NULL,
+    trainer_id INT NOT NULL,
+    calificacion INT CHECK (calificacion BETWEEN 1 AND 5),
+    comentario TEXT,
+    fecha_feedback DATETIME NOT NULL,
+    tipo ENUM('Módulo', 'Trainer', 'General') NOT NULL,
+    estado ENUM('Pendiente', 'Revisado', 'Archivado') NOT NULL DEFAULT 'Pendiente',
+    FOREIGN KEY (camper_id) REFERENCES campers(id),
+    FOREIGN KEY (modulo_id) REFERENCES modulos(id),
+    FOREIGN KEY (trainer_id) REFERENCES trainers(id)
 );
 
-CREATE TABLE Asistencia_Clases (
-    id_asistencia INT PRIMARY KEY AUTO_INCREMENT,
-    id_matricula INT NOT NULL,
-    id_area INT NOT NULL,
-    id_horario INT NOT NULL,
-    fecha DATE NOT NULL,
-    asistencia ENUM('Presente', 'Ausente', 'Tarde', 'Justificado') DEFAULT 'Presente',
-    observaciones TEXT,
-    id_trainer INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_matricula) REFERENCES Matriculas(id_matricula) ON DELETE CASCADE,
-    FOREIGN KEY (id_area) REFERENCES Areas_Entrenamiento(id_area),
-    FOREIGN KEY (id_horario) REFERENCES Horarios(id_horario),
-    FOREIGN KEY (id_trainer) REFERENCES Trainers(id_trainer),
-    UNIQUE (id_matricula, id_area, id_horario, fecha)
-);
